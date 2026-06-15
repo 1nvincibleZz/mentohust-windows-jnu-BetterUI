@@ -1,0 +1,80 @@
+# User and machine-specific configuration
+Config.ini
+**/Config.ini
+修改方案.md
+*.user
+*.suo
+*.opensdf
+*.sdf
+*.psess
+*.vsp
+*.vspx
+*.aps
+*.clw
+*.opt
+
+# Build outputs and packaged binaries
+Debug/
+Release/
+Release_GB/
+dist/
+*.exe
+*.dll
+*.lib
+!VS2012/MentoHUST/Source/Other/wpcap.lib
+!VS2012/MentoHUST/Source/Other/IPHlpApi.lib
+*.obj
+*.pdb
+*.ilk
+*.idb
+*.pch
+*.bsc
+*.tlb
+*.tlog/
+*.lastbuildstate
+*.recipe
+
+# Packet captures and local diagnostics
+*.pcap
+*.pcapng
+*.cap
+*.etl
+*.log
+*.dmp
+*.dump
+*.mpf
+
+# Python test/cache output
+.pytest_cache/
+__pycache__/
+*.py[cod]
+
+# IDE/editor metadata
+.vs/
+.vscode/
+.idea/
+*.swp
+*.tmp
+*.bak
+
+# Local archives and temporary transfer files
+*.zip
+*.7z
+*.rar
+*.tar
+*.gz
+*.tgz
+
+# Personal temporary files
+WeChat Files/
+FileStorage/Temp/
+Temp/
+tmp/
+
+# Local secrets
+.env
+.env.local
+*.key
+*.pem
+*.crt
+*.cer
