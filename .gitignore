@@ -2,10 +2,20 @@
 Config.ini
 **/Config.ini
 修改方案.md
+CODEX_MEMORY.md
+LOCAL_NOTES.md
+PRIVATE_NOTES.md
+*.local.md
 *.user
+*.userosscache
+*.sln.docstates
 *.suo
 *.opensdf
+*.opendb
 *.sdf
+*.VC.db
+*.VC.opendb
+Browse.VC.db
 *.psess
 *.vsp
 *.vspx
@@ -18,6 +28,9 @@ Debug/
 Release/
 Release_GB/
 dist/
+[Bb]in/
+[Oo]bj/
+ipch/
 *.exe
 *.dll
 *.lib
@@ -25,21 +38,33 @@ dist/
 !VS2012/MentoHUST/Source/Other/IPHlpApi.lib
 *.obj
 *.pdb
+*.ipdb
+*.iobj
 *.ilk
 *.idb
 *.pch
 *.bsc
+*.sbr
+*.res
+*.exp
+*.map
 *.tlb
 *.tlog/
 *.lastbuildstate
 *.recipe
+*.msi
+*.msix
+*.appx
+*.cab
 
 # Packet captures and local diagnostics
 *.pcap
 *.pcapng
 *.cap
 *.etl
+*.har
 *.log
+logs/
 *.dmp
 *.dump
 *.mpf
@@ -48,6 +73,11 @@ dist/
 .pytest_cache/
 __pycache__/
 *.py[cod]
+.venv/
+venv/
+env/
+.mypy_cache/
+.ruff_cache/
 
 # IDE/editor metadata
 .vs/
@@ -56,6 +86,13 @@ __pycache__/
 *.swp
 *.tmp
 *.bak
+*.backup
+*.old
+*.orig
+*.rej
+*~
+Thumbs.db
+desktop.ini
 
 # Local archives and temporary transfer files
 *.zip
@@ -64,6 +101,8 @@ __pycache__/
 *.tar
 *.gz
 *.tgz
+*.xz
+*.bz2
 
 # Personal temporary files
 WeChat Files/
@@ -74,7 +113,23 @@ tmp/
 # Local secrets
 .env
 .env.local
+.env.*
+secrets/
+credentials/
+*.secret
+*.secrets
 *.key
 *.pem
 *.crt
 *.cer
+*.pfx
+*.p12
+*.p7b
+*.asc
+*.gpg
+*.age
+id_rsa*
+id_ed25519*
+*_rsa
+*_ed25519
+.ssh/
