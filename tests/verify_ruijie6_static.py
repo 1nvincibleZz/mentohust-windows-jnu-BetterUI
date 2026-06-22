@@ -8,6 +8,9 @@ DLG = ROOT / "VS2012" / "MentoHUST" / "Source" / "MentoHUSTDlg.cpp"
 PROCESS = ROOT / "VS2012" / "MentoHUST" / "Source" / "Process.cpp"
 PROCESS_H = ROOT / "VS2012" / "MentoHUST" / "Source" / "Process.h"
 PARAMETER = ROOT / "VS2012" / "MentoHUST" / "Source" / "ParameterPage.cpp"
+MANIFEST = ROOT / "VS2012" / "MentoHUST" / "res" / "exe.manifest"
+PROJECT = ROOT / "VS2012" / "MentoHUST" / "MentoHUST.vcxproj"
+PROJECT_FILTERS = ROOT / "VS2012" / "MentoHUST" / "MentoHUST.vcxproj.filters"
 
 
 def read(path: Path) -> str:
@@ -98,6 +101,59 @@ def test_main_window_branding_has_no_legacy_logo_or_ruijie463_copy():
     assert "m_linkLogo" not in init_interface
     assert "SetURL" not in init_interface
     assert "LinkURL" not in init_interface
+
+
+def test_about_window_version_manifest_and_first_party_sources_have_no_author_signatures():
+    rc = read(RC)
+    dlg_cpp = read(DLG)
+    manifest = read(MANIFEST)
+    string_list = read(ROOT / "VS2012" / "MentoHUST" / "Source" / "StringList.cpp")
+    process = read(PROCESS)
+    project = read(PROJECT)
+    project_filters = read(PROJECT_FILTERS)
+    about_dialog = block_between(rc, "IDD_ABOUTBOX DIALOG", "IDD_MENTOHUST_DIALOG DIALOGEX")
+
+    forbidden_terms = [
+        "华梦",
+        "华茗",
+        "HustMoon",
+        "HustMoon Studio",
+        "HustMoon Software",
+        "联系作者",
+        "联系方式",
+        "检查更新",
+        "MentoHUST感言",
+        "Athlonxeon",
+        "Snowwings",
+        "Soar",
+        "freevanx",
+        "JimmyKing",
+        "HCNE",
+        "BYHH",
+        "bynix",
+        "byunix",
+        "code.google.com/p/mentohust",
+    ]
+
+    for text in [rc, dlg_cpp, manifest, string_list, process]:
+        for term in forbidden_terms:
+            assert term not in text
+
+    assert "SS_BITMAP" not in about_dialog
+    assert "IDB_LOGO" not in rc
+    assert "IDC_SC_CONTRACT" not in about_dialog
+    assert "IDC_SC_CHECKNEW" not in about_dialog
+    assert "m_LinkContact" not in dlg_cpp
+    assert "m_LinkUpdate" not in dlg_cpp
+    assert "OnScContact" not in dlg_cpp
+    assert "CompanyName" not in rc
+    assert "LegalCopyright" not in rc
+    assert "HyperLink.cpp" not in project
+    assert "Hyperlink.h" not in project
+    assert "HyperLink.cpp" not in project_filters
+    assert "Hyperlink.h" not in project_filters
+    assert not (ROOT / "VS2012" / "MentoHUST" / "Source" / "Other" / "HyperLink.cpp").exists()
+    assert not (ROOT / "VS2012" / "MentoHUST" / "Source" / "Other" / "Hyperlink.h").exists()
 
 
 def test_connect_requires_account_and_adapter():

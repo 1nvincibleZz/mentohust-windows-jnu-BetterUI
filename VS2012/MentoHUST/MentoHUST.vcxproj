@@ -278,7 +278,6 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
-    <ClCompile Include="Source\Other\HyperLink.cpp" />
     <ClCompile Include="Source\Other\md5.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_GB|Win32'">
       </PrecompiledHeader>
@@ -318,7 +317,6 @@
   <ItemGroup>
     <ClInclude Include="Source\AccountPage.h" />
     <ClInclude Include="Source\ConfigDlg.h" />
-    <ClInclude Include="Source\Other\Hyperlink.h" />
     <ClInclude Include="Source\MentoHUST.h" />
     <ClInclude Include="Source\MentoHUSTDlg.h" />
     <ClInclude Include="Source\ParameterPage.h" />
@@ -330,7 +328,6 @@
   <ItemGroup>
     <Image Include="res\Certting.ico" />
     <Image Include="res\Failed.ico" />
-    <Image Include="res\logo.bmp" />
     <Image Include="res\MentoHUST.ico" />
   </ItemGroup>
   <ItemGroup>

@@ -25,8 +25,6 @@ public:
 // Dialog Data
 	//{{AFX_DATA(CAboutDlg)
 	enum { IDD = IDD_ABOUTBOX };
-	CButtonLink	m_LinkContact;
-	CHyperLink	m_LinkUpdate;
 	//}}AFX_DATA
 
 	// ClassWizard generated virtual function overrides
@@ -38,14 +36,11 @@ public:
 // Implementation
 protected:
 	//{{AFX_MSG(CAboutDlg)
-	afx_msg void OnScContact();
-	virtual BOOL OnInitDialog();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };
 
 CAboutDlg::CAboutDlg() : CDialog(CAboutDlg::IDD)
-	, m_LinkUpdate(LoadString(IDS_LINKURL))
 {
 	//{{AFX_DATA_INIT(CAboutDlg)
 	//}}AFX_DATA_INIT
@@ -55,33 +50,14 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CAboutDlg)
-	DDX_Control(pDX, IDC_SC_CONTRACT, m_LinkContact);
-	DDX_Control(pDX, IDC_SC_CHECKNEW, m_LinkUpdate);
 	//}}AFX_DATA_MAP
 }
 
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialog)
 	//{{AFX_MSG_MAP(CAboutDlg)
-	ON_BN_CLICKED(IDC_SC_CONTRACT, OnScContact)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
-BOOL CAboutDlg::OnInitDialog() 
-{
-	CDialog::OnInitDialog();
-	
-	// TODO: Add extra initialization here
-	m_LinkContact.SetTipText(LoadString(IDS_CONTACT_TIP));
-	m_LinkUpdate.SetTipText(LoadString(IDS_UPDATE_TIP));
-	return TRUE;  // return TRUE unless you set the focus to a control
-	// EXCEPTION: OCX Property Pages should return FALSE
-}
-
-void CAboutDlg::OnScContact() 
-{
-	MessageBox(LoadString(IDS_CONTACT_TEXT), LoadString(IDS_CONTACT_TIP), MB_OK|MB_ICONWARNING);
-	m_LinkContact.SetCapture();
-}
 
 /////////////////////////////////////////////////////////////////////////////
 // CMentoHUSTDlg dialog

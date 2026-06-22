@@ -6,10 +6,6 @@
 #define IDD_ABOUTBOX                    100
 #define IDS_ABOUTBOX                    101
 #define IDD_MENTOHUST_DIALOG            102
-#define IDS_LINKURL                     102
-#define IDS_CONTACT_TIP                 103
-#define IDS_UPDATE_TIP                  104
-#define IDS_CONTACT_TEXT                105
 #define IDS_WELCOME                     106
 #define IDS_MSG_CAPTION                 107
 #define IDS_HELPERROR                   108
@@ -38,7 +34,6 @@
 #define IDI_CERTTING                    129
 #define IDS_TRAY_DHCP                   130
 #define IDI_FAILED                      130
-#define IDB_LOGO                        131
 #define IDS_STATE_START                 131
 #define IDD_CONFIGBOX                   132
 #define IDS_STATE_USERNAME              132
@@ -83,7 +78,6 @@
 #define IDS_SERVMSG1                    168
 #define IDS_SERVMSG2                    169
 #define IDS_WAIT_ERROR                  170
-#define IDC_SC_LOGO                     1000
 #define IDC_BN_OUTPUT                   1001
 #define IDC_BN_OPTION                   1002
 #define IDC_BN_ABOUT                    1003
@@ -93,8 +87,6 @@
 #define IDC_CB_ADAPTER                  1007
 #define IDC_SC_STATE                    1008
 #define IDC_ED_OUTPUT                   1009
-#define IDC_SC_CONTRACT                 1010
-#define IDC_SC_CHECKNEW                 1011
 #define IDC_TAB                         1012
 #define IDC_ED_USERNAME                 1013
 #define IDC_ED_PASSWORD                 1014

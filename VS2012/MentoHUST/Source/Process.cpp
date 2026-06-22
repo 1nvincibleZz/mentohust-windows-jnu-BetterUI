@@ -616,7 +616,7 @@ int CProcess::checkRuijie(const u_char *md5Seed)	/* Ëã·¨£¬Ìî³äÈñ½İ¿Í»§¶ËMD5Ğ£Ñé²
 			ruijie[i+j] ^= ruijie[j];
 	}
 	memset(ruijie+m_readSize, 0, m_checkSize-m_readSize);
-	j = (m_checkSize - 16) / 8;	/* Êı¾İÁ¿ÏÖÔÚÇå³şÁË£¬ÏÂÃæÓÃSoarµÄËã·¨¿ªÊ¼¼ÆËãÏàÓ¦MD5Öµ */
+	j = (m_checkSize - 16) / 8;	/* Êı¾İÁ¿ÏÖÔÚÇå³şÁË£¬ÏÂÃæ¿ªÊ¼¼ÆËãÏàÓ¦MD5Öµ */
 	for (i=0; i<8; i++)	
 	{
 		memcpy(ruijie + j * i, md5Seed, 16);

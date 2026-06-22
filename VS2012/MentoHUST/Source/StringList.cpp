@@ -1,5 +1,4 @@
 // StringList.cpp : 实现文件
-//Written By HustMoon
 
 #include "stdafx.h"
 #include "StringList.h"
