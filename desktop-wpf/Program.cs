@@ -112,8 +112,6 @@ namespace MentoHUST.Desktop
 
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr handle, int attribute, ref int value, int size);
-        [DllImport("user32.dll")]
-        private static extern bool DestroyIcon(IntPtr icon);
         [DllImport("user32.dll", EntryPoint = "PostMessageW")]
         private static extern bool PostMessage(IntPtr handle, int message, IntPtr wParam, IntPtr lParam);
 
@@ -138,7 +136,10 @@ namespace MentoHUST.Desktop
                 Get<Image>("BrandEmblem").Source = seal;
                 var emblem = Get<Image>("BrandEmblem");
                 emblem.Clip = new EllipseGeometry(new Rect(0, 0, emblem.Width, emblem.Height));
-                window.Icon = seal;
+            }
+            using (var stream = Program.Resource("AppIcon.ico")) {
+                var icon = BitmapFrame.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+                icon.Freeze(); window.Icon = icon;
             }
             using (var stream = Program.Resource("HeaderHD.png")) {
                 var reference = BitmapFrame.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
@@ -564,19 +565,10 @@ namespace MentoHUST.Desktop
             automaticMinimizeVersion++;
             if (tray == null) {
                 tray = new Forms.NotifyIcon { Text = "JNU Campus Network" };
-                // Use the same official emblem for the tray rather than a stock application icon.
-                var bitmap = new RenderTargetBitmap(32, 32, 96, 96, PixelFormats.Pbgra32);
-                var visual = new DrawingVisual();
-                using (var context = visual.RenderOpen()) context.DrawImage(window.Icon, new Rect(0, 0, 32, 32));
-                bitmap.Render(visual);
-                var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
-                using (var stream = new MemoryStream()) {
-                    encoder.Save(stream); stream.Position = 0;
-                    using (var drawing = new System.Drawing.Bitmap(stream)) {
-                        IntPtr handle = drawing.GetHicon();
-                        try { trayIcon = (System.Drawing.Icon)System.Drawing.Icon.FromHandle(handle).Clone(); tray.Icon = trayIcon; }
-                        finally { DestroyIcon(handle); }
-                    }
+                using (var stream = Program.Resource("AppIcon.ico")) {
+                    int size = Forms.SystemInformation.SmallIconSize.Width;
+                    trayIcon = new System.Drawing.Icon(stream, size, size);
+                    tray.Icon = trayIcon;
                 }
                 tray.DoubleClick += delegate { RestoreFromTray(); };
                 tray.ContextMenuStrip = new Forms.ContextMenuStrip();
