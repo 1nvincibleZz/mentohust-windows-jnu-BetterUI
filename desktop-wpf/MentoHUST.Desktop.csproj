@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableDefaultPageItems>false</EnableDefaultPageItems>
+    <AssemblyName>MentoHUST.Desktop.Preview</AssemblyName>
+    <RootNamespace>MentoHUST.Desktop</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
+    <EmbeddedResource Include="MainWindow.xaml" LogicalName="MentoHUST.Desktop.MainWindow.xaml" />
+    <EmbeddedResource Include="Theme.xaml" LogicalName="MentoHUST.Desktop.Theme.xaml" />
+    <EmbeddedResource Include="Assets/HeaderHD.png" LogicalName="MentoHUST.Desktop.HeaderHD.png" />
+    <EmbeddedResource Include="StartHotspot.ps1" LogicalName="MentoHUST.Desktop.StartHotspot.ps1" />
+    <EmbeddedResource Include="../VS2012/MentoHUST/res/jnu_emblem_official.png" LogicalName="MentoHUST.Desktop.Emblem.png" />
+  </ItemGroup>
+</Project>
