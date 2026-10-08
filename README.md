@@ -10,7 +10,7 @@
 
 ## 功能
 
-- 单窗口首页与设置页，圆角控件、柔和图标、高清页眉和校徽。
+- 单窗口首页与设置页，圆角控件、柔和图标、高清页眉和校徽；程序、窗口及托盘使用官网 SVG 生成的透明多尺寸图标。
 - 平滑切页、滑动标签与复选框过渡；动画结束清理资源，保留键盘操作。
 - 账号管理只填写账号和密码，网卡选择、认证状态及运行日志同步显示。
 - 旧版 INI 导入、草稿取消、兼容保存、外部修改检测和上一份配置备份。
@@ -59,5 +59,6 @@ dotnet build .\desktop-wpf\MentoHUST.Desktop.csproj
 - [WPF 构建、功能和检查命令](desktop-wpf/README.md)
 - [认证后台桥接与迁移边界](desktop-wpf/MIGRATION.md)
 - [界面素材来源](desktop-wpf/Assets/README.md)
+- [本版更新内容](CHANGELOG.md)
 
 原 `VS2012/MentoHUST` 工程与认证核心保留，`references/` 是历史参考。原 Windows MentoHUST 来源见 [Google Code 存档](https://code.google.com/archive/p/mentohust/issues/51)。

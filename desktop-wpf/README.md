@@ -26,6 +26,8 @@ pwsh -File .\desktop-wpf\build-engine.ps1 -VisualStudioRoot 'D:\MicrosoftVisualS
 
 `.NET 8 Windows` 工程可用 `dotnet build desktop-wpf/MentoHUST.Desktop.csproj` 构建，尚未在本机验证。
 
+程序文件、窗口和托盘共用 `Assets/AppIcon.ico`。它包含九种尺寸，从校方 SVG 原稿生成，校徽外部透明。日常构建直接使用已提交的 ICO；重新生成可运行 `pwsh -File .\desktop-wpf\build-app-icon.ps1`。来源与处理方式见 [图标说明](Assets/AppIcon-source.md)。
+
 ## 检查
 
 ```powershell
