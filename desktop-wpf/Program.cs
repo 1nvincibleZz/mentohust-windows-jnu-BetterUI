@@ -267,8 +267,6 @@ namespace MentoHUST.Desktop
             var adapter = Get<ComboBox>("AdapterChoice").SelectedItem as AdapterInfo;
             Get<Button>("Authenticate").IsEnabled = !authenticationBusy && !closing && authentication.IsAvailable &&
                 (authenticationRunning || (account != null && account.PasswordReadable && !string.IsNullOrEmpty(account.SourceSection) && adapter != null && adapter.CaptureAvailable));
-            Get<Button>("Authenticate").ToolTip = nativeClient == null ? "当前模式不启动认证后台。" : authentication.IsAvailable ?
-                "使用已保存的账号与选定网卡认证；旧版客户端运行时会拒绝启动。" : "认证后台或抓包驱动不可用。";
             Get<TextBlock>("AuthenticateLabel").Text = authenticationBusy ? "请稍候…" : authenticationRunning ? "断开认证" : "开始认证";
             Get<TextBlock>("EngineStatus").Text = nativeClient == null ? "界面预览" : !authentication.IsAvailable ? "认证服务不可用" :
                 currentState == AuthenticationState.Connected ? "校园网已连接" : authenticationRunning ? "认证进行中" : "点击开始认证";

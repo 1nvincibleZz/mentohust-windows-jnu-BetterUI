@@ -35,7 +35,7 @@
               <Border x:Name="StateBadge" Background="#FFE7EC" CornerRadius="13" Padding="9,5"><StackPanel Orientation="Horizontal"><Ellipse x:Name="StateDot" Width="7" Height="7" Fill="#F03958" Margin="0,0,6,0"/><TextBlock x:Name="StateText" Text="未认证" FontSize="11.5" Foreground="#ED3652" FontWeight="SemiBold"/></StackPanel></Border>
               <TextBlock x:Name="EngineStatus" Text="界面预览" Foreground="{StaticResource Muted}" FontSize="11" Margin="10,0,0,0"/>
             </StackPanel>
-            <Button x:Name="Authenticate" Grid.Row="3" Grid.ColumnSpan="3" Style="{StaticResource Primary}" Margin="0,5,0,5" IsEnabled="False" ToolTip="请选择账号和网络适配器。" ToolTipService.ShowOnDisabled="True">
+            <Button x:Name="Authenticate" Grid.Row="3" Grid.ColumnSpan="3" Style="{StaticResource Primary}" Margin="0,5,0,5" IsEnabled="False">
               <StackPanel Orientation="Horizontal"><Image Source="{StaticResource SendGlyph}" Width="19" Height="19" Margin="0,0,11,0"/><TextBlock x:Name="AuthenticateLabel" Text="开始认证" Foreground="White" FontSize="15"/></StackPanel>
             </Button>
             <Grid Grid.Row="4" Grid.ColumnSpan="3" Margin="0,5,0,5">
