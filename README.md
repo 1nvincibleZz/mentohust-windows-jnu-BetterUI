@@ -20,7 +20,7 @@
 
 ## 下载与使用
 
-从本仓库的 [Releases](https://github.com/1nvincibleZz/mentohust-windows-jnu-BetterUI/releases) 下载 `MentoHUST-BetterUI-*.zip`，解压到固定目录，运行 `MentoHUST.BetterUI.exe`。单文件发布包只包含主程序和通俗操作说明 `README.txt`；认证后台已嵌入主程序，启动时自动准备，无需另开 EXE。GitHub 自动附带的 Source code 是源码，日常使用不需要下载。
+从 [BetterUI 发布页面（Fork）](https://github.com/1nvincibleZz/mentohust-windows-jnu-BetterUI/releases) 下载 `MentoHUST-BetterUI-*.zip`，解压到固定目录，运行 `MentoHUST.BetterUI.exe`。单文件发布包只包含主程序和通俗操作说明 `README.txt`；认证后台已嵌入主程序，启动时自动准备，无需另开 EXE。GitHub 自动附带的 Source code 是源码，日常使用不需要下载。
 
 1. 安装兼容 pcap 的抓包驱动；使用 Npcap 时启用 WinPcap API 兼容模式。
 2. 第一次使用可点击“导入配置”选择旧客户端的 `Config.ini`，或在设置中添加账号。填写后点击“添加／更新”，再点击“确定”。

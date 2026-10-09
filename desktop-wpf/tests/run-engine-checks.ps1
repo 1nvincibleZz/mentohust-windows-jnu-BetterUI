@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$OutputDirectory)
+param([Parameter(Mandatory=$true)][string]$OutputDirectory, [string]$EngineExecutable = '')
 $ErrorActionPreference = 'Stop'
 $project = Split-Path $PSScriptRoot
 $evidence = Join-Path ([IO.Path]::GetFullPath($OutputDirectory)) ('checks-' + [guid]::NewGuid().ToString('N'))
@@ -8,6 +8,7 @@ $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
   (Join-Path $project 'EngineContract.cs') (Join-Path $project 'ProcessEngineClient.cs') (Join-Path $project 'SessionDraft.cs') `
   (Join-Path $project 'LegacyCodec.cs') (Join-Path $project 'LegacyConfigurationStore.cs') (Join-Path $PSScriptRoot 'EngineChecks.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Engine check compile failed' }
-& (Join-Path $evidence 'EngineChecks.exe') (Join-Path $project 'bin\EngineTrial\MentoHUST.Engine.exe') $evidence
+$taskEngine = if ($EngineExecutable) { (Resolve-Path -LiteralPath $EngineExecutable).Path } else { Join-Path $project 'bin\EngineTrial\MentoHUST.Engine.exe' }
+& (Join-Path $evidence 'EngineChecks.exe') $taskEngine $evidence
 if ($LASTEXITCODE -ne 0) { throw 'Engine checks failed' }
 Write-Output "ENGINE_CHECK_EVIDENCE=$evidence"

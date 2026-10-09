@@ -53,6 +53,8 @@ pwsh -File .\desktop-wpf\tests\run-startup-checks.ps1 -OutputDirectory C:\Temp\m
 pwsh -File .\desktop-wpf\tests\run-hotspot-checks.ps1 -OutputDirectory C:\Temp\mentohust-hotspot
 ```
 
+检查单文件构建产生的后台时，给 `run-engine-checks.ps1` 追加 `-EngineExecutable .\desktop-wpf\bin\SingleFile\native\MentoHUST.Engine.exe`；未指定时检查原开发输出 `bin/EngineTrial`。.NET Framework 检查目录建议使用 `C:\Temp\mentohust-*` 等短路径，避免嵌套缓存路径超过 Windows 的传统长度限制。
+
 UI 检查使用内存或独立临时配置，导出虚构账号的截图，验证编辑、取消、保存、焦点、布局、动画、半秒收起和启动选项。配置兼容性检查使用 68 组虚构密码与原 C++ 函数双向对照，并用旧版 INI 接口读取保存结果。
 
 自动认证检查使用模拟认证客户端与虚拟网卡探测，验证开关关闭、延迟就绪、只执行一次、重复请求、取消、超时、阻塞探测、无效配置与启动失败；界面检查覆盖保存账号／网卡、共享启动路径、打开设置取消等待及手动开始接管。没有真实 START、实际认证包、真实开机登记或热点动作。另据维护者 2026-10-09 的实际使用反馈，Windows 登录后的开机自启动与自动认证已验证通过；此实测结论对应维护者的电脑与校园网环境。
