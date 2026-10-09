@@ -65,3 +65,7 @@ dotnet build .\desktop-wpf\MentoHUST.Desktop.csproj
 - [本版更新内容](CHANGELOG.md)
 
 原 `VS2012/MentoHUST` 工程与认证核心保留，`references/` 是历史参考。原 Windows MentoHUST 来源见 [Google Code 存档](https://code.google.com/archive/p/mentohust/issues/51)。
+
+
+## 致谢❤❤
+感谢开源https://github.com/Hjdd14/mentohust-windows-jnu
