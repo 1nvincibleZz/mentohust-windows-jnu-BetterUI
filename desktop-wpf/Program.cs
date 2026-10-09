@@ -43,25 +43,28 @@ namespace MentoHUST.Desktop
                 bool memoryChecks = args.Length == 2 && (args[0] == "--ui-checks" || animationChecks);
                 bool configurationChecks = args.Length == 2 && args[0] == "--ui-config-checks";
                 bool engineChecks = args.Length == 2 && args[0] == "--ui-engine-checks";
+                bool automaticChecks = args.Length == 2 && args[0] == "--ui-auto-auth-checks";
                 LegacyConfigurationStore store = null;
-                if (configurationChecks || engineChecks) {
+                if (configurationChecks || engineChecks || automaticChecks) {
                     Directory.CreateDirectory(args[1]);
                     store = new LegacyConfigurationStore(Path.Combine(args[1], "session-" + Guid.NewGuid().ToString("N"), "Config.ini"));
                     store.Load(); store.Save(SessionDraft.CreatePreview());
                 } else if (!memoryChecks && !(args.Length == 1 && args[0] == "--preview"))
                     store = new LegacyConfigurationStore(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MentoHUST.Wpf", "Config.ini"));
-                IStartupRegistration startup = configurationChecks || engineChecks ? (IStartupRegistration)new MemoryStartupRegistration() :
+                IStartupRegistration startup = configurationChecks || engineChecks || automaticChecks ? (IStartupRegistration)new MemoryStartupRegistration() :
                     store == null ? null : new WindowsStartupRegistration(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName);
-                var controller = new DesktopController(window, store, store != null && !configurationChecks, startup);
+                var controller = new DesktopController(window, store, store != null && !configurationChecks && !automaticChecks, startup,
+                    !memoryChecks && !configurationChecks && !engineChecks && !automaticChecks);
                 if (args.Length == 1 && args[0] == "--startup") controller.LogStartup();
                 if (animationChecks) window.Loaded += async delegate { await controller.RunAnimationChecksAsync(args[1]); };
                 else if (memoryChecks || configurationChecks)
                     window.Loaded += async delegate { await controller.RunChecksAsync(args[1]); };
                 if (engineChecks) window.Loaded += async delegate { await controller.RunEngineChecksAsync(args[1]); };
+                if (automaticChecks) window.Loaded += async delegate { await controller.RunAutomaticChecksAsync(args[1]); };
                 app.Run(window);
                 return controller.ExitCode;
             } catch (Exception error) {
-                if (args.Length == 2 && (args[0] == "--ui-checks" || args[0] == "--ui-config-checks" || args[0] == "--ui-engine-checks" || args[0] == "--ui-animation-checks")) {
+                if (args.Length == 2 && (args[0] == "--ui-checks" || args[0] == "--ui-config-checks" || args[0] == "--ui-engine-checks" || args[0] == "--ui-animation-checks" || args[0] == "--ui-auto-auth-checks")) {
                     Directory.CreateDirectory(args[1]); File.WriteAllText(Path.Combine(args[1], "checks.txt"), error.ToString());
                 }
                 else if (args.Length == 1 && args[0] == "--preview") Console.Error.WriteLine(error);
@@ -102,6 +105,9 @@ namespace MentoHUST.Desktop
         private LegacyConfigurationStore configuration;
         private readonly IStartupRegistration startup;
         private bool startupAvailable;
+        private StartupAuthentication automaticAuthentication = new StartupAuthentication();
+        private Func<string, CancellationToken, Task<AdapterInfo>> automaticAdapterProbe =
+            (id, cancellation) => Task.Run(() => AdapterCatalog.FindReady(id), cancellation);
         private string startupReadError;
         private bool settingsVisible, transitioning, syncing;
         private readonly BitmapCache homePageCache = new BitmapCache { EnableClearType = true, SnapsToDevicePixels = true };
@@ -122,7 +128,7 @@ namespace MentoHUST.Desktop
             while (list.Items.Count > 200) list.Items.RemoveAt(list.Items.Count - 1);
         }
 
-        public DesktopController(Window window, LegacyConfigurationStore configuration, bool useEngine = false, IStartupRegistration startup = null)
+        public DesktopController(Window window, LegacyConfigurationStore configuration, bool useEngine = false, IStartupRegistration startup = null, bool allowAutomaticAuthentication = true)
         {
             this.window = window;
             this.configuration = configuration;
@@ -163,9 +169,20 @@ namespace MentoHUST.Desktop
             UpdateConfigurationMode();
             Get<Button>("Authenticate").IsEnabled = authentication.IsAvailable;
             Click("Authenticate", async delegate { await ToggleAuthenticationAsync(); });
-            Get<ComboBox>("AccountChoice").SelectionChanged += delegate { UpdateAuthenticationControls(); };
-            Get<ComboBox>("AdapterChoice").SelectionChanged += delegate { UpdateAuthenticationControls(); };
-            if (useEngine) window.Loaded += async delegate { await InitializeEngineAsync(); };
+            Get<ComboBox>("AccountChoice").SelectionChanged += delegate { CancelAutomaticSelection(); UpdateAuthenticationControls(); };
+            Get<ComboBox>("AdapterChoice").SelectionChanged += delegate { CancelAutomaticSelection(); UpdateAuthenticationControls(); };
+            bool automaticAtLaunch = committed.AutoAuthenticate && allowAutomaticAuthentication;
+            if (useEngine) window.Loaded += async delegate {
+                Task initialization = InitializeEngineAsync();
+                if (automaticAtLaunch && AnotherFrontendIsRunning()) {
+                    automaticAtLaunch = false; Log("检测到另一个客户端正在运行，本次不自动认证");
+                }
+                await automaticAuthentication.RunOnceAsync(automaticAtLaunch,
+                    cancellation => ProbeAutomaticReadinessAsync(initialization, cancellation),
+                    cancellation => ToggleAuthenticationAsync(true), message => { if (!closing) Log(message); });
+                await initialization;
+                if (!closing) UpdateAuthenticationControls();
+            };
             Click("OpenSettings", delegate { OpenSettings(); });
             Click("Back", delegate { CancelSettings(); });
             Click("Cancel", delegate { CancelSettings(); });
@@ -201,6 +218,7 @@ namespace MentoHUST.Desktop
                 }
             };
             window.Closing += async delegate(object sender, System.ComponentModel.CancelEventArgs e) {
+                automaticAuthentication.Cancel();
                 automaticMinimizeVersion++;
                 hotspot.Cancel();
                 if (nativeClient == null || closeConfirmed) return;
@@ -211,6 +229,7 @@ namespace MentoHUST.Desktop
                 closeConfirmed = true; window.Close();
             };
             window.Closed += delegate {
+                automaticAuthentication.Dispose();
                 closing = true;
                 foreach (string name in new[] { "HomePage", "SettingsPage" }) {
                     ((TranslateTransform)Get<Grid>(name).RenderTransform).BeginAnimation(TranslateTransform.XProperty, null);
@@ -253,7 +272,7 @@ namespace MentoHUST.Desktop
             Get<TextBlock>("EngineStatus").Text = "正在连接后台";
             try {
                 await nativeClient.ConnectAsync(CancellationToken.None);
-                if (!closing) Log(authentication.IsAvailable ? "已准备就绪，点击开始认证连接校园网" : "抓包驱动不可用，无法开始认证");
+                if (!closing) Log(authentication.IsAvailable ? (committed.AutoAuthenticate ? "认证后台已准备就绪" : "已准备就绪，点击开始认证连接校园网") : "抓包驱动不可用，无法开始认证");
             } catch (Exception error) { if (!closing) Log("后台不可用：" + error.Message); }
             if (!closing) UpdateAuthenticationControls();
         }
@@ -277,11 +296,63 @@ namespace MentoHUST.Desktop
             Get<TextBlock>("StateText").Foreground = brush; Get<System.Windows.Shapes.Ellipse>("StateDot").Fill = brush;
             Get<Border>("StateBadge").Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(currentState == AuthenticationState.Connected ? "#E1F5EB" : currentState == AuthenticationState.Disconnected || currentState == AuthenticationState.Failed ? "#FFE7EC" : "#E7F2FF"));
             Get<TextBlock>("ConfigurationStatus").Text = nativeClient == null ? (configuration == null ? "界面预览 · 更改仅保留在本窗口" : "设置保存至 WPF 独立配置副本 · 离线界面检查") :
-                "WPF 独立配置 · 认证引擎集成试用 · 本版手动开始认证";
+                automaticAuthentication.IsPending ? "正在等待网卡就绪后自动认证" : "WPF 独立配置 · 认证后台已接入";
         }
 
-        private async Task ToggleAuthenticationAsync()
+        private void CancelAutomaticSelection()
         {
+            if (!syncing && automaticAuthentication.IsPending) automaticAuthentication.Cancel();
+        }
+
+        private static bool AnotherFrontendIsRunning()
+        {
+            int own = System.Diagnostics.Process.GetCurrentProcess().Id;
+            bool found = false;
+            foreach (var process in System.Diagnostics.Process.GetProcesses()) {
+                using (process) {
+                    try {
+                        if (process.Id != own && (process.ProcessName.StartsWith("MentoHUST.BetterUI", StringComparison.OrdinalIgnoreCase) ||
+                            process.ProcessName.StartsWith("MentoHUST.Desktop.Preview", StringComparison.OrdinalIgnoreCase))) found = true;
+                    } catch (InvalidOperationException) { }
+                    catch (System.ComponentModel.Win32Exception) { }
+                }
+            }
+            return found;
+        }
+
+        private async Task<bool> ProbeAutomaticReadinessAsync(Task initialization, CancellationToken cancellation)
+        {
+            var account = committed.Accounts.FirstOrDefault(a => a.SourceSection == committed.DefaultAccount);
+            if (account == null || string.IsNullOrEmpty(account.SourceSection) || !account.PasswordReadable ||
+                string.IsNullOrEmpty(account.Username) || string.IsNullOrEmpty(account.Password))
+                throw new InvalidOperationException("请先保存有效账号，并手动认证一次以记住所选账号和网卡。");
+            if (string.IsNullOrEmpty(committed.DefaultAdapter))
+                throw new InvalidOperationException("没有已保存的网卡，请先选择网卡并保存设置。");
+            await initialization;
+            cancellation.ThrowIfCancellationRequested();
+            if (!authentication.IsAvailable) throw new InvalidOperationException("认证后台或抓包驱动不可用。");
+            if (authenticationBusy || authenticationRunning || settingsVisible || closing) {
+                automaticAuthentication.Cancel(); cancellation.ThrowIfCancellationRequested(); return false;
+            }
+            var adapter = await automaticAdapterProbe(committed.DefaultAdapter, cancellation);
+            cancellation.ThrowIfCancellationRequested();
+            if (adapter == null || !adapter.CaptureAvailable ||
+                !string.Equals(adapter.Id, committed.DefaultAdapter, StringComparison.OrdinalIgnoreCase)) return false;
+            syncing = true;
+            try {
+                var choice = Get<ComboBox>("AdapterChoice");
+                var adapters = choice.Items.Cast<AdapterInfo>().Where(a => !string.Equals(a.Id, adapter.Id,
+                    StringComparison.OrdinalIgnoreCase)).ToList();
+                adapters.Add(adapter); choice.ItemsSource = adapters; choice.SelectedItem = adapter;
+                Get<ComboBox>("AccountChoice").SelectedItem = account;
+            } finally { syncing = false; }
+            UpdateAuthenticationControls();
+            return true;
+        }
+
+        private async Task ToggleAuthenticationAsync(bool automaticStart = false)
+        {
+            if (!automaticStart) automaticAuthentication.Cancel();
             if (authenticationBusy || closing || !authentication.IsAvailable) return;
             automaticMinimizeVersion++;
             bool stopping = authenticationRunning;
@@ -297,7 +368,9 @@ namespace MentoHUST.Desktop
                     var adapter = Get<ComboBox>("AdapterChoice").SelectedItem as AdapterInfo;
                     if (account == null || adapter == null || !adapter.CaptureAvailable || !account.PasswordReadable) throw new InvalidOperationException("请选择有效的已保存账号和抓包网卡。");
                     var selected = committed.Clone(); selected.DefaultAccount = account.SourceSection; selected.DefaultAdapter = adapter.Id;
-                    committed = configuration.Save(selected); BindHome(); authenticationRunning = true; handledSuccess = false;
+                    committed = configuration.Save(selected);
+                    syncing = true; try { BindHome(); } finally { syncing = false; }
+                    authenticationRunning = true; handledSuccess = false;
                     hotspot.BeginSession(committed.HotspotAfterSuccess, adapter.Id);
                     await authentication.StartAsync(new AuthenticationRequest { AccountKey = committed.DefaultAccount, AdapterKey = adapter.Id }, CancellationToken.None);
                 }
@@ -347,6 +420,7 @@ namespace MentoHUST.Desktop
 
         private async void ImportConfiguration()
         {
+            automaticAuthentication.Cancel();
             var dialog = new Microsoft.Win32.OpenFileDialog { Title = "导入旧客户端配置为 WPF 副本", Filter = "MentoHUST 配置 (*.ini)|*.ini", FileName = "Config.ini" };
             if (dialog.ShowDialog(window) != true) return;
             try {
@@ -367,6 +441,7 @@ namespace MentoHUST.Desktop
 
         private void OpenSettings()
         {
+            automaticAuthentication.Cancel();
             if (transitioning || settingsVisible || authenticationRunning || authenticationBusy) return;
             UpdateConfigurationMode();
             draft = committed.Clone();
@@ -914,6 +989,62 @@ namespace MentoHUST.Desktop
                 if (!window.IsVisible) RestoreFromTray();
                 UpdateAuthenticationControls();
             }
+        }
+
+        private sealed class AutomaticCheckClient : IAuthenticationClient
+        {
+            public int Starts;
+            public AuthenticationRequest Request;
+            public bool IsAvailable { get { return true; } }
+            public event EventHandler<AuthenticationEvent> StateChanged { add { } remove { } }
+            public Task StartAsync(AuthenticationRequest request, CancellationToken cancellation) {
+                cancellation.ThrowIfCancellationRequested(); Starts++; Request = request; return Task.FromResult(0);
+            }
+            public Task StopAsync(CancellationToken cancellation) { return Task.FromResult(0); }
+        }
+
+        internal async Task RunAutomaticChecksAsync(string directory)
+        {
+            Directory.CreateDirectory(directory);
+            try {
+                Require(nativeClient == null && configuration != null, "Automatic checks must use an isolated mock client");
+                var client = new AutomaticCheckClient(); authentication = client;
+                committed.AutoAuthenticate = true;
+                committed.DefaultAccount = committed.Accounts[0].SourceSection;
+                committed.DefaultAdapter = "\\Device\\NPF_{00000000-0000-0000-0000-000000000001}";
+                committed = configuration.Save(committed); BindHome();
+                int probes = 0;
+                automaticAdapterProbe = (id, cancellation) => Task.FromResult(++probes < 2 ? null :
+                    new AdapterInfo { Id = id, Name = "Isolated startup test adapter", CaptureAvailable = true });
+                Func<CancellationToken, Task<bool>> ready = cancellation => ProbeAutomaticReadinessAsync(Task.FromResult(0), cancellation);
+                Func<CancellationToken, Task> start = cancellation => ToggleAuthenticationAsync(true);
+                Task pending = automaticAuthentication.RunOnceAsync(true, ready, start, message => Log(message));
+                await Task.Delay(50);
+                Require(client.Starts == 0 && automaticAuthentication.IsPending && window.IsVisible,
+                    "Startup must wait without starting or hiding the window");
+                await automaticAuthentication.RunOnceAsync(true, ready, start, message => Log(message));
+                await pending;
+                Require(client.Starts == 1 && probes == 2 && authenticationRunning && !authenticationBusy,
+                    "Ready startup must invoke the shared start path exactly once");
+                Require(client.Request.AccountKey == committed.DefaultAccount && client.Request.AdapterKey == committed.DefaultAdapter,
+                    "Startup must use the saved account and exact saved adapter");
+                Require(configuration.Load().AutoAuthenticate && window.IsVisible && currentState != AuthenticationState.Connected,
+                    "Startup flag must persist without simulating connection success");
+                authenticationRunning = false; automaticAuthentication = new StartupAuthentication(2000, 10);
+                automaticAdapterProbe = (id, cancellation) => Task.FromResult<AdapterInfo>(null);
+                pending = automaticAuthentication.RunOnceAsync(true, ready, start, message => Log(message));
+                OpenSettings(); await pending; await Task.Delay(220);
+                Require(client.Starts == 1 && settingsVisible && !automaticAuthentication.IsPending,
+                    "Opening settings must cancel automatic waiting without starting");
+                CancelSettings(); await Task.Delay(220);
+                automaticAuthentication = new StartupAuthentication(2000, 10);
+                pending = automaticAuthentication.RunOnceAsync(true, ready, start, message => Log(message));
+                await ToggleAuthenticationAsync(); await pending;
+                Require(client.Starts == 2 && !automaticAuthentication.IsPending,
+                    "Manual start must cancel automatic waiting and start once itself");
+                File.WriteAllText(Path.Combine(directory, "checks.txt"), "WPF_AUTO_AUTH_CHECKS_PASS\nDelayed mock adapter; exact saved keys; shared StartAsync path once; duplicate request ignored; settings/manual start cancel pending automation; no manufactured success or early minimize.\nTemporary config and mock client only; no actual authentication, startup registry or hotspot action.\n");
+            } catch (Exception error) { ExitCode = 1; File.WriteAllText(Path.Combine(directory, "checks.txt"), error.ToString()); }
+            finally { authenticationRunning = false; window.Close(); }
         }
 
         internal async Task RunEngineChecksAsync(string directory)

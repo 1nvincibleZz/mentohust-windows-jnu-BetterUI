@@ -8,7 +8,9 @@
 
 选择已保存的有效账号与 pcap 网卡，后台和驱动就绪后才启用开始认证。旧客户端正在运行时拒绝新认证；退出 WPF 窗口结束本窗口的私有后台，不发送 EAP Logoff，断开按钮才调用原停止流程。
 
-开机登录运行使用当前用户独立的 `MentoHUST.Wpf` Run 值，登记带引号的当前 EXE 绝对路径和 `--startup`。两页复选框同步，确定时写入，取消不写；启动项失败不保存配置，配置失败尝试恢复原启动项及类型，回滚异常明确报告。启动后仍手动认证，自动认证选项尚未接通。
+开机登录运行使用当前用户独立的 `MentoHUST.Wpf` Run 值，登记带引号的当前 EXE 绝对路径和 `--startup`。两页复选框同步，确定时写入，取消不写；启动项失败不保存配置，配置失败尝试恢复原启动项及类型，回滚异常明确报告。
+
+“运行后自动认证”在下一次正常启动时生效，开机启动与手动打开客户端均支持。`StartupAuthentication.cs` 每个进程最多启动一次，等待后台握手和保存的 pcap 网卡链路就绪，最长 60 秒；不要求认证前已有 IP 或 Internet。自动路径调用与手动按钮相同的 `ToggleAuthenticationAsync`，沿用成功状态、热点及延迟收起行为。缺少保存账号／网卡、密码不可读、后台不可用、超时或启动失败只记录原因。手动操作、打开设置、更换选择、关闭窗口会取消等待；检测已有另一 WPF 客户端时不自动认证。预览与所有检查入口禁用真实自动认证。
 
 认证成功后可等待 500 毫秒再收起到托盘；期间断开、状态改变或手动恢复会取消待执行的收起。手动托盘按钮立即执行。
 
@@ -35,6 +37,8 @@ pwsh -File .\desktop-wpf\build-engine.ps1 -VisualStudioRoot 'D:\MicrosoftVisualS
 .\desktop-wpf\bin\EngineTrial\MentoHUST.Desktop.Preview.exe --ui-config-checks C:\Temp\mentohust-ui-config
 .\desktop-wpf\bin\EngineTrial\MentoHUST.Desktop.Preview.exe --ui-engine-checks C:\Temp\mentohust-ui-engine
 .\desktop-wpf\bin\EngineTrial\MentoHUST.Desktop.Preview.exe --ui-animation-checks C:\Temp\mentohust-ui-animation
+.\desktop-wpf\bin\EngineTrial\MentoHUST.Desktop.Preview.exe --ui-auto-auth-checks C:\Temp\mentohust-ui-auto-auth
+pwsh -File .\desktop-wpf\tests\run-auto-auth-checks.ps1 -OutputDirectory C:\Temp\mentohust-auto-auth
 pwsh -File .\desktop-wpf\tests\run-configuration-checks.ps1 -OutputDirectory C:\Temp\mentohust-config -VisualStudioRoot 'D:\MicrosoftVisualStudio'
 pwsh -File .\desktop-wpf\tests\run-engine-checks.ps1 -OutputDirectory C:\Temp\mentohust-engine
 pwsh -File .\desktop-wpf\tests\run-startup-checks.ps1 -OutputDirectory C:\Temp\mentohust-startup
@@ -42,6 +46,8 @@ pwsh -File .\desktop-wpf\tests\run-hotspot-checks.ps1 -OutputDirectory C:\Temp\m
 ```
 
 UI 检查使用内存或独立临时配置，导出虚构账号的截图，验证编辑、取消、保存、焦点、布局、动画、半秒收起和启动选项。配置兼容性检查使用 68 组虚构密码与原 C++ 函数双向对照，并用旧版 INI 接口读取保存结果。
+
+自动认证检查使用模拟认证客户端与虚拟网卡探测，验证开关关闭、延迟就绪、只执行一次、重复请求、取消、超时、阻塞探测、无效配置与启动失败；界面检查覆盖保存账号／网卡、共享启动路径、打开设置取消等待及手动开始接管。没有真实 START、实际认证包、真实开机登记或热点动作。Windows 登录后的真实网卡时序仍待用户测试。
 
 后台检查强制离线，验证配置、无效请求、START 拒绝、状态顺序、停止、正常和异常退出、Job 清理及 stdin EOF。UI 后台检查只连接、验证请求和空闲停止，不发送 START。
 

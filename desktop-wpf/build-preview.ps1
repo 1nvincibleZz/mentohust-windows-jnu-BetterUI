@@ -19,7 +19,7 @@ $arguments = @('/nologo', '/target:winexe', '/platform:anycpu', '/codepage:65001
   "/resource:$root\Assets\HeaderHD.png,MentoHUST.Desktop.HeaderHD.png",
   "/resource:$root\Assets\AppIcon.ico,MentoHUST.Desktop.AppIcon.ico",
   "/resource:$root\StartHotspot.ps1,MentoHUST.Desktop.StartHotspot.ps1",
-  "$root\Program.cs", "$root\SessionDraft.cs", "$root\EngineContract.cs",
+    "$root\Program.cs", "$root\SessionDraft.cs", "$root\EngineContract.cs", "$root\StartupAuthentication.cs",
   "$root\LegacyCodec.cs", "$root\LegacyConfigurationStore.cs", "$root\AdapterCatalog.cs", "$root\ProcessEngineClient.cs", "$root\HotspotAfterAuthentication.cs", "$root\StartupRegistration.cs")
 & $compiler @arguments
 if ($LASTEXITCODE -ne 0) { throw "WPF 编译失败：$LASTEXITCODE" }

@@ -10,6 +10,18 @@ namespace MentoHUST.Desktop
 {
     public static class AdapterCatalog
     {
+        public static AdapterInfo FindReady(string savedId)
+        {
+            if (string.IsNullOrEmpty(savedId)) return null;
+            var adapter = Enumerate().FirstOrDefault(a => a.CaptureAvailable &&
+                string.Equals(a.Id, savedId, StringComparison.OrdinalIgnoreCase));
+            if (adapter == null) return null;
+            // EAP authentication precedes IP/Internet access. Only wait for the physical link.
+            return NetworkInterface.GetAllNetworkInterfaces().Any(n =>
+                savedId.IndexOf(n.Id.Trim('{', '}'), StringComparison.OrdinalIgnoreCase) >= 0 &&
+                n.OperationalStatus == OperationalStatus.Up) ? adapter : null;
+        }
+
         [StructLayout(LayoutKind.Sequential)] private struct PcapInterface
         { public IntPtr Next, Name, Description, Addresses; public uint Flags; }
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr LoadLibraryEx(string name, IntPtr file, uint flags);
