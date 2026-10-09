@@ -16,6 +16,14 @@
 
 热点选项默认关闭，保存在 `[WpfOptions] HotspotAfterSuccess`。首次认证成功后等待选定网卡联网，检查热点能力，使用有限查询、结束及等待权限核对 `8021x.exe`，在同一个句柄上结束一次并等待退出，再启动 Windows 移动热点。保留 `RJSuService` 与 MentoHUST 后台，SSID／密码沿用系统设置；自动重连、重复成功或动作失败不重复尝试。关闭和断开取消未完成流程，已经完成的系统动作保留。
 
+## 单文件发布
+
+`EmbeddedEngine.cs` 将嵌入的原后台释放到 `%LOCALAPPDATA%\MentoHUST.Wpf\Engine\<SHA256>\MentoHUST.Engine.exe`，先核对已有缓存，损坏时用临时文件原子替换。有效缓存复用，后台字节保持不变；首次准备在工作线程执行。主程序仍通过私有管道调用独立后台，认证核心无需迁移。后台工作目录保持为主程序目录，兼容相对数据包路径。开发构建未嵌入后台时使用同目录 EXE。
+
+运行 `pwsh -File .\desktop-wpf\build-single-file.ps1 -VisualStudioRoot 'D:\MicrosoftVisualStudio'` 即可构建单文件版；也可用 `-EngineExecutable <已构建后台路径>`。输出 ZIP 只包含 `MentoHUST.BetterUI.exe` 和 `README.txt`，校验清单保留在 ZIP 外。使用者说明来自 `README-user.txt`。
+
+可用 `pwsh -File .\desktop-wpf\tests\run-embedded-engine-checks.ps1 -OutputDirectory C:\Temp\mentohust-embedded -EngineExecutable <后台路径>` 验证释放、字节一致、复用、损坏修复及并发。单文件前端的 `--ui-engine-checks` 使用隔离缓存，不启动真实认证。
+
 ## 构建
 
 ```powershell
@@ -26,7 +34,7 @@ pwsh -File .\desktop-wpf\build-engine.ps1 -VisualStudioRoot 'D:\MicrosoftVisualS
 
 两个 EXE 位于同一输出目录。前端使用系统 .NET Framework 编译器，不需要 .NET SDK；后台需要 Visual Studio 的 C++／MFC x86 工具链、Windows SDK 和兼容 pcap 驱动。支持通过 `-OutputDirectory` 指定开发输出目录。
 
-`.NET 8 Windows` 工程可用 `dotnet build desktop-wpf/MentoHUST.Desktop.csproj` 构建，尚未在本机验证。
+`.NET 8 Windows` 工程可通过 `-p:EngineExecutable=<后台绝对路径>` 嵌入已构建后台，可用 `dotnet build desktop-wpf/MentoHUST.Desktop.csproj` 构建，尚未在本机验证。
 
 程序文件、窗口和托盘共用 `Assets/AppIcon.ico`。它包含九种尺寸，从校方 SVG 原稿生成，校徽外部透明。日常构建直接使用已提交的 ICO；重新生成可运行 `pwsh -File .\desktop-wpf\build-app-icon.ps1`。来源与处理方式见 [图标说明](Assets/AppIcon-source.md)。
 

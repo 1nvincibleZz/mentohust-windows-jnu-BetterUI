@@ -54,7 +54,7 @@ namespace MentoHUST.Desktop
                 IStartupRegistration startup = configurationChecks || engineChecks || automaticChecks ? (IStartupRegistration)new MemoryStartupRegistration() :
                     store == null ? null : new WindowsStartupRegistration(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName);
                 var controller = new DesktopController(window, store, store != null && !configurationChecks && !automaticChecks, startup,
-                    !memoryChecks && !configurationChecks && !engineChecks && !automaticChecks);
+                    !memoryChecks && !configurationChecks && !engineChecks && !automaticChecks, engineChecks ? Path.Combine(args[1], "engine-cache") : null);
                 if (args.Length == 1 && args[0] == "--startup") controller.LogStartup();
                 if (animationChecks) window.Loaded += async delegate { await controller.RunAnimationChecksAsync(args[1]); };
                 else if (memoryChecks || configurationChecks)
@@ -94,7 +94,9 @@ namespace MentoHUST.Desktop
         private readonly Window window;
         private IAuthenticationClient authentication = new UnavailableAuthenticationClient();
         private ProcessEngineClient nativeClient;
+        private Task engineInitialization;
         private readonly bool enableEngine;
+        private readonly string engineCacheRoot;
         private bool authenticationRunning, authenticationBusy, closing, closeConfirmed;
         private bool handledSuccess;
         private int automaticMinimizeVersion;
@@ -128,12 +130,13 @@ namespace MentoHUST.Desktop
             while (list.Items.Count > 200) list.Items.RemoveAt(list.Items.Count - 1);
         }
 
-        public DesktopController(Window window, LegacyConfigurationStore configuration, bool useEngine = false, IStartupRegistration startup = null, bool allowAutomaticAuthentication = true)
+        public DesktopController(Window window, LegacyConfigurationStore configuration, bool useEngine = false, IStartupRegistration startup = null, bool allowAutomaticAuthentication = true, string engineCacheRoot = null)
         {
             this.window = window;
             this.configuration = configuration;
             this.startup = startup;
             enableEngine = useEngine;
+            this.engineCacheRoot = engineCacheRoot ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MentoHUST.Wpf", "Engine");
             if (configuration != null) committed = configuration.Load();
             window.Title = configuration == null ? "JNU Campus Network · 界面预览" : "JNU Campus Network";
             using (var stream = Program.Resource("Emblem.png")) {
@@ -243,34 +246,44 @@ namespace MentoHUST.Desktop
             if (!useEngine) Log("预览模式，不会启动网络认证");
         }
 
-        private async Task InitializeEngineAsync()
+        private Task InitializeEngineAsync()
+        {
+            if (engineInitialization == null || (engineInitialization.IsCompleted && nativeClient == null))
+                engineInitialization = PrepareEngineAsync();
+            return engineInitialization;
+        }
+
+        private async Task PrepareEngineAsync()
         {
             if (nativeClient != null || configuration == null) return;
-            nativeClient = new ProcessEngineClient(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MentoHUST.Engine.exe"), configuration.FilePath);
-            authentication = nativeClient;
-            nativeClient.StateChanged += delegate(object sender, AuthenticationEvent update) {
-                window.Dispatcher.BeginInvoke(new Action(async delegate {
-                    if (closing) return;
-                    currentState = update.State;
-                    if (update.State != AuthenticationState.Connected) automaticMinimizeVersion++;
-                    if (!authentication.IsAvailable || update.State == AuthenticationState.Disconnected) authenticationRunning = false;
-                    if (!string.IsNullOrEmpty(update.Message)) Log(update.Message, update.State);
-                    UpdateAuthenticationControls();
-                    Task minimize = Task.FromResult(0);
-                    if (update.State == AuthenticationState.Connected && !handledSuccess) {
-                        handledSuccess = true; if (committed.AutoMinimize) minimize = MinimizeAfterSuccessAsync();
-                        if (committed.HotspotAfterSuccess) Log("正在准备移动热点：等待认证网卡联网后，结束 8021x.exe 一次并开启热点");
-                    }
-                    try {
-                        string result = await hotspot.HandleStateAsync(update.State);
-                        if (!closing && !string.IsNullOrEmpty(result)) Log(result);
-                    } catch (OperationCanceledException) { if (!closing) Log("认证后热点操作已取消；已开启的热点可在 Windows 设置中关闭"); }
-                    catch (Exception error) { if (!closing) Log("认证后热点操作失败：" + error.Message); }
-                    await minimize;
-                }));
-            };
-            Get<TextBlock>("EngineStatus").Text = "正在连接后台";
+            Get<TextBlock>("EngineStatus").Text = "正在准备后台";
             try {
+                string executable = await Task.Run(() => EmbeddedEngine.Resolve(AppDomain.CurrentDomain.BaseDirectory, engineCacheRoot));
+                if (closing) return;
+                nativeClient = new ProcessEngineClient(executable, configuration.FilePath, false, AppDomain.CurrentDomain.BaseDirectory);
+                authentication = nativeClient;
+                nativeClient.StateChanged += delegate(object sender, AuthenticationEvent update) {
+                    window.Dispatcher.BeginInvoke(new Action(async delegate {
+                        if (closing) return;
+                        currentState = update.State;
+                        if (update.State != AuthenticationState.Connected) automaticMinimizeVersion++;
+                        if (!authentication.IsAvailable || update.State == AuthenticationState.Disconnected) authenticationRunning = false;
+                        if (!string.IsNullOrEmpty(update.Message)) Log(update.Message, update.State);
+                        UpdateAuthenticationControls();
+                        Task minimize = Task.FromResult(0);
+                        if (update.State == AuthenticationState.Connected && !handledSuccess) {
+                            handledSuccess = true; if (committed.AutoMinimize) minimize = MinimizeAfterSuccessAsync();
+                            if (committed.HotspotAfterSuccess) Log("正在准备移动热点：等待认证网卡联网后，结束 8021x.exe 一次并开启热点");
+                        }
+                        try {
+                            string result = await hotspot.HandleStateAsync(update.State);
+                            if (!closing && !string.IsNullOrEmpty(result)) Log(result);
+                        } catch (OperationCanceledException) { if (!closing) Log("认证后热点操作已取消；已开启的热点可在 Windows 设置中关闭"); }
+                        catch (Exception error) { if (!closing) Log("认证后热点操作失败：" + error.Message); }
+                        await minimize;
+                    }));
+                };
+                Get<TextBlock>("EngineStatus").Text = "正在连接后台";
                 await nativeClient.ConnectAsync(CancellationToken.None);
                 if (!closing) Log(authentication.IsAvailable ? (committed.AutoAuthenticate ? "认证后台已准备就绪" : "已准备就绪，点击开始认证连接校园网") : "抓包驱动不可用，无法开始认证");
             } catch (Exception error) { if (!closing) Log("后台不可用：" + error.Message); }
@@ -287,7 +300,7 @@ namespace MentoHUST.Desktop
             Get<Button>("Authenticate").IsEnabled = !authenticationBusy && !closing && authentication.IsAvailable &&
                 (authenticationRunning || (account != null && account.PasswordReadable && !string.IsNullOrEmpty(account.SourceSection) && adapter != null && adapter.CaptureAvailable));
             Get<TextBlock>("AuthenticateLabel").Text = authenticationBusy ? "请稍候…" : authenticationRunning ? "断开认证" : "开始认证";
-            Get<TextBlock>("EngineStatus").Text = nativeClient == null ? "界面预览" : !authentication.IsAvailable ? "认证服务不可用" :
+            Get<TextBlock>("EngineStatus").Text = nativeClient == null ? (enableEngine ? "认证服务不可用" : "界面预览") : !authentication.IsAvailable ? "认证服务不可用" :
                 currentState == AuthenticationState.Connected ? "校园网已连接" : authenticationRunning ? "认证进行中" : "点击开始认证";
             string[] labels = { "未认证", "寻找服务器", "发送账号", "验证中", "获取 IP", "已认证", "认证失败" };
             Get<TextBlock>("StateText").Text = labels[(int)currentState];
@@ -1052,6 +1065,7 @@ namespace MentoHUST.Desktop
             Directory.CreateDirectory(directory);
             try {
                 // Startup handshake and configuration validation only. Never call START in this mode.
+                await InitializeEngineAsync();
                 Require(nativeClient != null, "Native backend was not selected");
                 await nativeClient.ConnectAsync(CancellationToken.None); await Task.Delay(200);
                 var account = Get<ComboBox>("AccountChoice").SelectedItem as AccountDraft;

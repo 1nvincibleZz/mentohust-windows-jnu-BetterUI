@@ -1,4 +1,4 @@
-param([string]$OutputDirectory = '')
+param([string]$OutputDirectory = '', [string]$EngineExecutable = '')
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $output = if ($OutputDirectory) { [IO.Path]::GetFullPath($OutputDirectory) } else { Join-Path $root 'bin\EngineTrial' }
@@ -19,8 +19,12 @@ $arguments = @('/nologo', '/target:winexe', '/platform:anycpu', '/codepage:65001
   "/resource:$root\Assets\HeaderHD.png,MentoHUST.Desktop.HeaderHD.png",
   "/resource:$root\Assets\AppIcon.ico,MentoHUST.Desktop.AppIcon.ico",
   "/resource:$root\StartHotspot.ps1,MentoHUST.Desktop.StartHotspot.ps1",
-    "$root\Program.cs", "$root\SessionDraft.cs", "$root\EngineContract.cs", "$root\StartupAuthentication.cs",
+    "$root\Program.cs", "$root\EmbeddedEngine.cs", "$root\SessionDraft.cs", "$root\EngineContract.cs", "$root\StartupAuthentication.cs",
   "$root\LegacyCodec.cs", "$root\LegacyConfigurationStore.cs", "$root\AdapterCatalog.cs", "$root\ProcessEngineClient.cs", "$root\HotspotAfterAuthentication.cs", "$root\StartupRegistration.cs")
+if ($EngineExecutable) {
+  $enginePath = (Resolve-Path -LiteralPath $EngineExecutable).Path
+  $arguments += "/resource:$enginePath,MentoHUST.Desktop.Engine.exe"
+}
 & $compiler @arguments
 if ($LASTEXITCODE -ne 0) { throw "WPF 编译失败：$LASTEXITCODE" }
 Write-Output "WPF_PREVIEW_BUILD_PASS: $output/MentoHUST.Desktop.Preview.exe"

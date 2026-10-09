@@ -12,7 +12,7 @@ namespace MentoHUST.Desktop
     // The inherited anonymous pipes are private to this child; no listening socket or shared named pipe.
     public sealed class ProcessEngineClient : IAuthenticationClient, IDisposable
     {
-        private readonly string executable, configuration;
+        private readonly string executable, configuration, workingDirectory;
         private readonly bool offline;
         private readonly object gate = new object();
         private readonly SemaphoreSlim commands = new SemaphoreSlim(1, 1);
@@ -27,9 +27,10 @@ namespace MentoHUST.Desktop
         public event EventHandler<AuthenticationEvent> StateChanged;
         internal int ChildId { get { return process == null ? 0 : process.Id; } }
 
-        public ProcessEngineClient(string executable, string configuration, bool offline = false)
+        public ProcessEngineClient(string executable, string configuration, bool offline = false, string workingDirectory = null)
         {
             this.executable = Path.GetFullPath(executable); this.configuration = Path.GetFullPath(configuration); this.offline = offline;
+            this.workingDirectory = workingDirectory == null ? Path.GetDirectoryName(this.executable) : Path.GetFullPath(workingDirectory);
         }
         private static string Encode(string value) { return Convert.ToBase64String(Encoding.UTF8.GetBytes(value)); }
         private static string Decode(string value) { return new UTF8Encoding(false, true).GetString(Convert.FromBase64String(value)); }
@@ -43,7 +44,7 @@ namespace MentoHUST.Desktop
                 var info = new ProcessStartInfo(executable, "--config \"" + configuration + "\"" + (offline ? " --offline" : "")) {
                     UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden,
                     RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
-                    StandardOutputEncoding = new UTF8Encoding(false, true), WorkingDirectory = Path.GetDirectoryName(executable)
+                    StandardOutputEncoding = new UTF8Encoding(false, true), WorkingDirectory = workingDirectory
                 };
                 try {
                     job = new ChildProcessJob(); process = Process.Start(info); job.Assign(process);

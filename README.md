@@ -20,7 +20,7 @@
 
 ## 下载与使用
 
-从本仓库的 [Releases](https://github.com/1nvincibleZz/mentohust-windows-jnu-BetterUI/releases) 下载 `MentoHUST-BetterUI-*.zip`，解压到固定目录，运行 `MentoHUST.BetterUI.exe`。同目录的 `MentoHUST.Engine.exe` 是认证后台。
+从本仓库的 [Releases](https://github.com/1nvincibleZz/mentohust-windows-jnu-BetterUI/releases) 下载 `MentoHUST-BetterUI-*.zip`，解压到固定目录，运行 `MentoHUST.BetterUI.exe`。单文件发布包只包含主程序和通俗操作说明 `README.txt`；认证后台已嵌入主程序，启动时自动准备，无需另开 EXE。GitHub 自动附带的 Source code 是源码，日常使用不需要下载。
 
 1. 安装兼容 pcap 的抓包驱动；使用 Npcap 时启用 WinPcap API 兼容模式。
 2. 第一次使用可点击“导入配置”选择旧客户端的 `Config.ini`，或在设置中添加账号。填写后点击“添加／更新”，再点击“确定”。
@@ -41,12 +41,11 @@
 已有 Windows .NET Framework 4.x 编译器时，用 PowerShell 构建前端；后台需要 Visual Studio C++、MFC x86 工具链和 Windows SDK。将 `VisualStudioRoot` 改为本机安装目录：
 
 ```powershell
-pwsh -File .\desktop-wpf\build-preview.ps1
-pwsh -File .\desktop-wpf\build-engine.ps1 -VisualStudioRoot 'D:\MicrosoftVisualStudio'
-.\desktop-wpf\bin\EngineTrial\MentoHUST.Desktop.Preview.exe
+pwsh -File .\desktop-wpf\build-single-file.ps1 -VisualStudioRoot 'D:\MicrosoftVisualStudio'
+.\desktop-wpf\bin\SingleFile\MentoHUST-BetterUI\MentoHUST.BetterUI.exe
 ```
 
-脚本的开发输出保留 `MentoHUST.Desktop.Preview.exe` 文件名，正常运行会连接认证后台；`--preview` 才是只在内存中操作的离线界面预览。发布包采用 `MentoHUST.BetterUI.exe` 文件名，两者使用同一前端。
+单文件构建先生成后台再嵌入前端，输出双文件 ZIP（主程序及 README）。已有后台时可用 `-EngineExecutable` 指定它；嵌入过程不修改后台字节。开发时仍可分别运行 `build-preview.ps1` 与 `build-engine.ps1`。脚本的开发输出保留 `MentoHUST.Desktop.Preview.exe` 文件名，正常运行会连接认证后台；`--preview` 才是只在内存中操作的离线界面预览。发布包采用 `MentoHUST.BetterUI.exe` 文件名，两者使用同一前端。
 
 另提供 .NET 8 Windows 工程：
 

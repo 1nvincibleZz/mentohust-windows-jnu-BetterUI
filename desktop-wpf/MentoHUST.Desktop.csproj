@@ -10,6 +10,7 @@
     <ApplicationIcon>Assets/AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="$(EngineExecutable)" LogicalName="MentoHUST.Desktop.Engine.exe" Condition="'$(EngineExecutable)' != ''" />
     <Compile Remove="tests/**/*.cs" />
     <EmbeddedResource Include="MainWindow.xaml" LogicalName="MentoHUST.Desktop.MainWindow.xaml" />
     <EmbeddedResource Include="Theme.xaml" LogicalName="MentoHUST.Desktop.Theme.xaml" />
