@@ -68,4 +68,4 @@ dotnet build .\desktop-wpf\MentoHUST.Desktop.csproj
 
 
 ## 致谢❤❤
-感谢开源https://github.com/Hjdd14/mentohust-windows-jnu
+感谢 :octocat: [Hjdd14/mentohust-windows-jnu](https://github.com/Hjdd14/mentohust-windows-jnu) 的开源贡献。
